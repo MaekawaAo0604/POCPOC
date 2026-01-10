@@ -15,6 +15,7 @@ export type {
   PoCRun,
   PoCResult,
   PoCData,
+  EmbeddedFeedback,
 } from './poc';
 
 // Feedback types

@@ -1,4 +1,21 @@
 import type { AutoConfig } from './pain';
+import type { UserRating, PositiveType, BlockerType } from './feedback';
+
+/**
+ * PoCに埋め込むフィードバック情報
+ */
+export interface EmbeddedFeedback {
+  /** 価値評価 */
+  userRating: UserRating;
+  /** 良かった点 */
+  positives: PositiveType[];
+  /** 引っかかった点 */
+  blockers: BlockerType[];
+  /** 一言コメント */
+  freeComment: string;
+  /** フィードバック日時 */
+  feedbackAt: string;
+}
 
 /**
  * 調整オプション
@@ -40,6 +57,8 @@ export interface PoCRun extends PoCSpec {
   shareToken?: string;
   /** 作成日時 (ISO 8601) */
   createdAt: string;
+  /** フィードバック（埋め込み） */
+  feedback?: EmbeddedFeedback;
 }
 
 /**

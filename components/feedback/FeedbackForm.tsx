@@ -6,6 +6,7 @@ import type {
   PositiveType,
   BlockerType,
   FeedbackData,
+  EmbeddedFeedback,
 } from '@/types';
 import {
   POSITIVE_LABELS,
@@ -18,12 +19,14 @@ import { cn } from '@/lib/utils';
 interface FeedbackFormProps {
   pocId: string;
   selectedPains: string[];
+  existingFeedback?: EmbeddedFeedback;
   onSubmitSuccess?: () => void;
 }
 
 export function FeedbackForm({
   pocId,
   selectedPains,
+  existingFeedback,
   onSubmitSuccess,
 }: FeedbackFormProps) {
   const [userRating, setUserRating] = useState<UserRating | null>(null);
@@ -33,6 +36,78 @@ export function FeedbackForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // 既存フィードバックがある場合は表示のみ
+  if (existingFeedback) {
+    return (
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-blue-800">送信済みフィードバック</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* 評価 */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-600 mb-2">評価</h4>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{RATING_EMOJIS[existingFeedback.userRating]}</span>
+              <span className="text-blue-700 font-medium">
+                {USER_RATING_LABELS[existingFeedback.userRating]}
+              </span>
+            </div>
+          </div>
+
+          {/* 良かった点 */}
+          {existingFeedback.positives.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">良かった点</h4>
+              <div className="flex flex-wrap gap-2">
+                {existingFeedback.positives.map((p) => (
+                  <span
+                    key={p}
+                    className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm"
+                  >
+                    {POSITIVE_LABELS[p]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 引っかかった点 */}
+          {existingFeedback.blockers.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">引っかかった点</h4>
+              <div className="flex flex-wrap gap-2">
+                {existingFeedback.blockers.map((b) => (
+                  <span
+                    key={b}
+                    className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm"
+                  >
+                    {BLOCKER_LABELS[b]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* コメント */}
+          {existingFeedback.freeComment && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">コメント</h4>
+              <p className="text-gray-700 bg-white p-3 rounded-lg">
+                {existingFeedback.freeComment}
+              </p>
+            </div>
+          )}
+
+          {/* 送信日時 */}
+          <p className="text-xs text-gray-500 text-right">
+            送信日時: {new Date(existingFeedback.feedbackAt).toLocaleString('ja-JP')}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const togglePositive = (value: PositiveType) => {
     setPositives((prev) =>

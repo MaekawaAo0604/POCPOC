@@ -1,47 +1,53 @@
 /**
  * FeedbackService - フィードバック保存・取得機能
  *
- * メタデータのみ永続保存（TTLなし）
+ * フィードバックはPoCデータに直接埋め込んで保存
  */
-import { kv, KEYS } from '@/lib/kv';
-import { generatePocId } from '@/lib/utils/idGenerator';
-import type { FeedbackData, StoredFeedback } from '@/types';
+import { kv, KEYS, DEFAULT_TTL_SECONDS } from '@/lib/kv';
+import type { FeedbackData, PoCData, EmbeddedFeedback } from '@/types';
 
 export interface FeedbackService {
   saveFeedback(feedback: FeedbackData): Promise<void>;
-  getFeedbacks(limit?: number): Promise<StoredFeedback[]>;
-  getFeedbacksByPocId(pocId: string): Promise<StoredFeedback[]>;
+  getFeedbackByPocId(pocId: string): Promise<EmbeddedFeedback | null>;
 }
 
 class FeedbackServiceImpl implements FeedbackService {
   /**
-   * フィードバック保存 - メタデータのみ永続保存（TTLなし）
+   * フィードバック保存 - PoCデータに直接埋め込む
    */
   async saveFeedback(feedback: FeedbackData): Promise<void> {
-    const feedbackWithId: StoredFeedback = {
-      feedbackId: generatePocId(), // IDとして再利用
-      ...feedback,
-      createdAt: new Date().toISOString(),
+    const { pocId, userRating, positives, blockers, freeComment } = feedback;
+
+    // 既存のPoCデータを取得
+    const pocData = await kv.get<PoCData>(KEYS.poc(pocId));
+    if (!pocData) {
+      throw new Error('PoC not found');
+    }
+
+    // フィードバックを埋め込む
+    const embeddedFeedback: EmbeddedFeedback = {
+      userRating,
+      positives,
+      blockers,
+      freeComment,
+      feedbackAt: new Date().toISOString(),
     };
 
-    // List型で追加（TTLなし = 永続）
-    await kv.lpush(KEYS.feedbacks, JSON.stringify(feedbackWithId));
-  }
+    const updatedPoc: PoCData = {
+      ...pocData,
+      feedback: embeddedFeedback,
+    };
 
-  /**
-   * フィードバック一覧取得（管理用）
-   */
-  async getFeedbacks(limit = 100): Promise<StoredFeedback[]> {
-    const feedbacks = await kv.lrange(KEYS.feedbacks, 0, limit - 1);
-    return feedbacks.map((f) => JSON.parse(f as string) as StoredFeedback);
+    // TTLを維持して保存
+    await kv.set(KEYS.poc(pocId), updatedPoc, { ex: DEFAULT_TTL_SECONDS });
   }
 
   /**
    * 特定PoCのフィードバック取得
    */
-  async getFeedbacksByPocId(pocId: string): Promise<StoredFeedback[]> {
-    const allFeedbacks = await this.getFeedbacks(1000); // 十分な数を取得
-    return allFeedbacks.filter((f) => f.pocId === pocId);
+  async getFeedbackByPocId(pocId: string): Promise<EmbeddedFeedback | null> {
+    const pocData = await kv.get<PoCData>(KEYS.poc(pocId));
+    return pocData?.feedback ?? null;
   }
 }
 

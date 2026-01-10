@@ -42,6 +42,7 @@ export default async function PoCPage({ params }: PageProps) {
         <FeedbackForm
           pocId={pocData.pocId}
           selectedPains={pocData.selectedPains}
+          existingFeedback={pocData.feedback}
         />
       </div>
     </div>
