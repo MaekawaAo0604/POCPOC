@@ -15,6 +15,7 @@ export default function HistoryPage() {
   const [pocs, setPocs] = useState<PoCListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debug, setDebug] = useState<{ keysFound: number; pocKeysFound: number } | null>(null);
 
   useEffect(() => {
     async function fetchPocs() {
@@ -23,6 +24,7 @@ export default function HistoryPage() {
         if (!response.ok) throw new Error('取得に失敗');
         const data = await response.json();
         setPocs(data.pocs || []);
+        setDebug(data.debug || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'エラー');
       } finally {
@@ -59,6 +61,12 @@ export default function HistoryPage() {
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-6">
             {error}
+          </div>
+        )}
+
+        {debug && (
+          <div className="p-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 text-sm mb-6">
+            Debug: KVキー数={debug.keysFound}, PoCキー数={debug.pocKeysFound}
           </div>
         )}
 
