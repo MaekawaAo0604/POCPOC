@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import Link from 'next/link';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -22,7 +23,7 @@ export default function RootLayout({
           <header className="bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
-                <div className="flex items-center gap-3">
+                <Link href="/" className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
@@ -41,7 +42,21 @@ export default function RootLayout({
                   <h1 className="text-lg font-semibold text-gray-900">
                     Sales PoC Generator
                   </h1>
-                </div>
+                </Link>
+                <nav className="flex items-center gap-4">
+                  <Link
+                    href="/"
+                    className="text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    新規作成
+                  </Link>
+                  <Link
+                    href="/history"
+                    className="text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    履歴
+                  </Link>
+                </nav>
               </div>
             </div>
           </header>
