@@ -19,15 +19,17 @@ export interface FeedbackService {
   getFeedbackByPocId(pocId: string): Promise<EmbeddedFeedback | null>;
 }
 
+/** 初期スコア（中間値から開始） */
+const INITIAL_SCORE = 2.0;
+
 /**
  * EMA（指数移動平均）でスコアを計算
  * 新スコア = 既存スコア × (1-α) + 新評価 × α
+ * 初回は中間値(2.0)から開始
  */
 function calculateEmaScore(existingScore: number, newRating: number, isFirst: boolean): number {
-  if (isFirst) {
-    return newRating;
-  }
-  const newScore = existingScore * (1 - EMA_ALPHA) + newRating * EMA_ALPHA;
+  const baseScore = isFirst ? INITIAL_SCORE : existingScore;
+  const newScore = baseScore * (1 - EMA_ALPHA) + newRating * EMA_ALPHA;
   return Math.round(newScore * 100) / 100;
 }
 
