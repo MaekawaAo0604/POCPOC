@@ -69,6 +69,9 @@ export async function POST(request: NextRequest) {
       html: result.html,
       meta: {
         selectedPains: spec.selectedPains,
+        autoConfig: spec.autoConfig,
+        adjustments: spec.adjustments,
+        sampleInput: spec.sampleInput,
         shareToken: result.meta?.shareToken,
         createdAt: result.meta?.createdAt || new Date().toISOString(),
       },
