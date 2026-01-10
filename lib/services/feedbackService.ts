@@ -67,11 +67,15 @@ class FeedbackServiceImpl implements FeedbackService {
     const newRating = RATING_SCORES[userRating];
     const weightedScore = calculateEmaScore(existingScore, newRating, isFirst);
 
+    // 累計評価件数（エントリ数ではなく実際の評価回数）
+    const previousCount = pocData.feedback?.count ?? 0;
+    const newCount = previousCount + 1;
+
     // 更新されたフィードバック
     const embeddedFeedback: EmbeddedFeedback = {
       entries: updatedEntries,
       weightedScore,
-      count: updatedEntries.length,
+      count: newCount,
     };
 
     const updatedPoc: PoCData = {

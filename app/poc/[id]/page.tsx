@@ -3,6 +3,9 @@ import { getPoCService } from '@/lib/services/pocService';
 import { PoCViewer } from '@/components/viewer';
 import { FeedbackForm } from '@/components/feedback';
 
+// キャッシュ無効化（常に最新データを取得）
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{
     id: string;
