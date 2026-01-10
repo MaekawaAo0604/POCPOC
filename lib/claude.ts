@@ -50,8 +50,11 @@ export function buildPrompt(spec: PoCSpec): string {
     ? `追加指示: ${adjustments.additionalNotes}`
     : '';
 
+  // 機能をJSON配列として準備
+  const featuresArray = JSON.stringify(autoConfig.hypothesisFeatures);
+
   return `あなたはAI PoC（Proof of Concept）デモを生成するアシスタントです。
-以下の仕様に基づいて、**入力と出力が体験できるインタラクティブなHTMLデモページ**を生成してください。
+以下の仕様に基づいて、**実際のAI APIを呼び出すインタラクティブなHTMLデモページ**を生成してください。
 
 ## 仮説機能（このPoCで検証したい機能）
 ${featuresSection}
@@ -69,36 +72,94 @@ ${notesSection}
 ## サンプル入力（デフォルト値として使用）
 「${sampleInput}」
 
-## 必須要件：インタラクティブなデモUI
+## 必須要件：実際のAI APIを呼び出すデモUI
 
-生成するHTMLは以下の構成にしてください：
+### 1. レイアウト構成
+- **ヘッダー**: デモのタイトルとKPI目標を表示
+- **入力エリア**: 大きなテキストエリア（min-height: 200px）、サンプル入力をデフォルト値に
+- **実行ボタン**: 目立つデザインの「AI処理を実行」ボタン
+- **出力エリア**: 結果表示用の広いエリア（min-height: 300px）
 
-### 1. 入力エリア
-- テキストエリア（複数行入力可能）
-- サンプル入力をデフォルト値として表示
-- 「AI処理を実行」ボタン
+### 2. 重要：API呼び出しの実装
 
-### 2. 出力エリア
-- 処理結果を表示するエリア
-- 最初は非表示または「ここに結果が表示されます」と表示
+以下のJavaScriptコードを**必ずそのまま**使用してください：
 
-### 3. JavaScript動作
-- ボタンクリックで入力テキストを取得
-- **ローディング表示**（「処理中...」やスピナー）を2-3秒表示
-- 入力内容に基づいた**それらしいAI処理結果**を生成して表示
-- 結果は仮説機能に沿った形式で表示（要約、分類、回答ドラフトなど）
+\`\`\`javascript
+async function processWithAI() {
+  const input = document.getElementById('inputText').value;
+  const outputArea = document.getElementById('outputArea');
+  const button = document.getElementById('processButton');
 
-### 4. 処理ロジック（JavaScript内で実装）
-- 入力テキストを解析して、それっぽい結果を生成
-- 例：キーワード抽出、文章の長さに応じた要約、定型的な分類結果など
-- 完全なAIではないが、**デモとして説得力のある結果**を返す
+  if (!input.trim()) {
+    alert('テキストを入力してください');
+    return;
+  }
+
+  // ローディング表示
+  button.disabled = true;
+  button.textContent = '処理中...';
+  outputArea.innerHTML = '<div style="text-align:center;padding:40px;"><div class="spinner"></div><p>AIが処理中です...</p></div>';
+
+  try {
+    const response = await fetch('/api/demo/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: input,
+        context: {
+          features: ${featuresArray},
+          scenario: '${adjustments.scenario || ''}',
+          tone: '${adjustments.tone || 'ビジネス'}'
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      outputArea.innerHTML = '<div style="color:red;padding:20px;">エラー: ' + data.error + '</div>';
+    } else {
+      // 結果を整形して表示
+      const formatted = data.result.replace(/\\n/g, '<br>');
+      outputArea.innerHTML = '<div style="padding:20px;line-height:1.8;white-space:pre-wrap;">' + formatted + '</div>';
+    }
+  } catch (error) {
+    outputArea.innerHTML = '<div style="color:red;padding:20px;">通信エラーが発生しました</div>';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'AI処理を実行';
+  }
+}
+\`\`\`
+
+### 3. CSSスピナーアニメーション（必須）
+\`\`\`css
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+\`\`\`
+
+### 4. HTML要素のID（必須）
+- テキストエリア: id="inputText"
+- 実行ボタン: id="processButton" onclick="processWithAI()"
+- 出力エリア: id="outputArea"
 
 ## 出力形式の要件
-1. **standalone HTML**: 単一のHTMLファイルとして完結
-2. **外部リソース禁止**: 外部スクリプト、CDN、画像は一切不可
-3. **インラインスタイル/スクリプト**: CSS/JSはすべてインライン
-4. **モダンなデザイン**: 見栄えの良いUI（グラデーション、カードデザイン、適切な余白）
-5. **レスポンシブ**: モバイルでも見やすい
+1. **standalone HTML**: 単一ファイルで完結
+2. **外部リソース禁止**: CDN、外部画像は不可
+3. **インラインCSS/JS**: すべてインラインで記述
+4. **大きく見やすいUI**: フォントサイズ16px以上、十分な余白
+5. **モダンなデザイン**: グラデーション背景、カードデザイン、シャドウ
 6. **日本語対応**: すべて日本語で
 
 HTMLのみを出力してください。説明やマークダウンは不要です。

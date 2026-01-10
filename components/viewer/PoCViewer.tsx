@@ -34,9 +34,10 @@ export function PoCViewer({ html, title }: PoCViewerProps) {
       <div className="relative">
         <iframe
           ref={iframeRef}
-          className="w-full min-h-[500px] border-0"
+          className="w-full min-h-[800px] border-0"
           title="PoC Preview"
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+          style={{ height: '80vh', minHeight: '800px' }}
         />
       </div>
     </Card>
