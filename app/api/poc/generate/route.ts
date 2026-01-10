@@ -4,7 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPoCService } from '@/lib/services/pocService';
-import type { PoCSpec, ErrorResponse, GeneratePoCResponse } from '@/types';
+import type { PoCSpec, ErrorResponse } from '@/types';
 
 // リクエストボディの型
 interface GeneratePoCRequest {
