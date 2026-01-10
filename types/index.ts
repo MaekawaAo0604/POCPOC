@@ -15,8 +15,10 @@ export type {
   PoCRun,
   PoCResult,
   PoCData,
+  FeedbackEntry,
   EmbeddedFeedback,
 } from './poc';
+export { RATING_SCORES } from './poc';
 
 // Feedback types
 export type {

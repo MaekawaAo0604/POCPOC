@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Button, Badge, Select } from '@/components/ui';
 import { getPainConfig } from '@/lib/services/configService';
-import type { AutoConfig, UserRating } from '@/types';
+import type { AutoConfig } from '@/types';
 
 interface PoCListItem {
   pocId: string;
@@ -13,7 +13,8 @@ interface PoCListItem {
   createdAt: string;
   shareToken?: string;
   feedback?: {
-    userRating: UserRating;
+    weightedScore: number;
+    count: number;
   };
 }
 
@@ -37,19 +38,12 @@ function getPainNames(painIds: string[]): string[] {
   return names;
 }
 
-// 評価の表示
-const RATING_DISPLAY: Record<UserRating, { label: string; emoji: string; color: string }> = {
-  helpful: { label: '役に立った', emoji: '👍', color: 'text-green-600' },
-  meh: { label: '微妙', emoji: '😐', color: 'text-yellow-600' },
-  unknown: { label: 'わからない', emoji: '🤔', color: 'text-gray-500' },
-};
-
-// 評価のソート優先度
-const RATING_PRIORITY: Record<UserRating, number> = {
-  helpful: 3,
-  meh: 2,
-  unknown: 1,
-};
+// スコアから表示情報を取得
+function getScoreDisplay(score: number): { label: string; emoji: string; color: string } {
+  if (score >= 2.5) return { label: '高評価', emoji: '😊', color: 'text-green-600' };
+  if (score >= 1.5) return { label: '普通', emoji: '😐', color: 'text-yellow-600' };
+  return { label: '低評価', emoji: '😕', color: 'text-red-500' };
+}
 
 export default function HistoryPage() {
   const [pocs, setPocs] = useState<PoCListItem[]>([]);
@@ -86,16 +80,16 @@ export default function HistoryPage() {
         break;
       case 'rating-good':
         sorted.sort((a, b) => {
-          const ratingA = a.feedback ? RATING_PRIORITY[a.feedback.userRating] : 0;
-          const ratingB = b.feedback ? RATING_PRIORITY[b.feedback.userRating] : 0;
-          return ratingB - ratingA;
+          const scoreA = a.feedback?.weightedScore ?? 0;
+          const scoreB = b.feedback?.weightedScore ?? 0;
+          return scoreB - scoreA;
         });
         break;
       case 'rating-bad':
         sorted.sort((a, b) => {
-          const ratingA = a.feedback ? RATING_PRIORITY[a.feedback.userRating] : 0;
-          const ratingB = b.feedback ? RATING_PRIORITY[b.feedback.userRating] : 0;
-          return ratingA - ratingB;
+          const scoreA = a.feedback?.weightedScore ?? 0;
+          const scoreB = b.feedback?.weightedScore ?? 0;
+          return scoreA - scoreB;
         });
         break;
       case 'no-feedback':
@@ -175,8 +169,8 @@ export default function HistoryPage() {
               {sortedPocs.map((poc) => {
                 const painNames = getPainNames(poc.selectedPains);
                 const kpi = poc.autoConfig?.kpiTarget;
-                const rating = poc.feedback?.userRating;
-                const ratingDisplay = rating ? RATING_DISPLAY[rating] : null;
+                const feedback = poc.feedback;
+                const scoreDisplay = feedback ? getScoreDisplay(feedback.weightedScore) : null;
 
                 return (
                   <Card key={poc.pocId} className="hover:shadow-md transition-shadow">
@@ -189,9 +183,9 @@ export default function HistoryPage() {
                               {painNames.length > 0 ? painNames.join(' / ') : 'PoC'}
                             </h3>
                             {/* 評価バッジ */}
-                            {ratingDisplay ? (
-                              <span className={`text-sm ${ratingDisplay.color}`}>
-                                {ratingDisplay.emoji} {ratingDisplay.label}
+                            {scoreDisplay && feedback ? (
+                              <span className={`text-sm ${scoreDisplay.color}`}>
+                                {scoreDisplay.emoji} {feedback.weightedScore.toFixed(1)} ({feedback.count}件)
                               </span>
                             ) : (
                               <Badge variant="default" className="text-xs">未評価</Badge>

@@ -23,6 +23,13 @@ interface FeedbackFormProps {
   onSubmitSuccess?: () => void;
 }
 
+// スコアから表示情報を取得
+function getScoreDisplay(score: number): { label: string; emoji: string; color: string } {
+  if (score >= 2.5) return { label: '高評価', emoji: '😊', color: 'text-green-600' };
+  if (score >= 1.5) return { label: '普通', emoji: '😐', color: 'text-yellow-600' };
+  return { label: '低評価', emoji: '😕', color: 'text-red-500' };
+}
+
 export function FeedbackForm({
   pocId,
   selectedPains,
@@ -36,78 +43,7 @@ export function FeedbackForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-
-  // 既存フィードバックがある場合は表示のみ
-  if (existingFeedback) {
-    return (
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="text-blue-800">送信済みフィードバック</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* 評価 */}
-          <div>
-            <h4 className="text-sm font-medium text-gray-600 mb-2">評価</h4>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{RATING_EMOJIS[existingFeedback.userRating]}</span>
-              <span className="text-blue-700 font-medium">
-                {USER_RATING_LABELS[existingFeedback.userRating]}
-              </span>
-            </div>
-          </div>
-
-          {/* 良かった点 */}
-          {existingFeedback.positives.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-600 mb-2">良かった点</h4>
-              <div className="flex flex-wrap gap-2">
-                {existingFeedback.positives.map((p) => (
-                  <span
-                    key={p}
-                    className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm"
-                  >
-                    {POSITIVE_LABELS[p]}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 引っかかった点 */}
-          {existingFeedback.blockers.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-600 mb-2">引っかかった点</h4>
-              <div className="flex flex-wrap gap-2">
-                {existingFeedback.blockers.map((b) => (
-                  <span
-                    key={b}
-                    className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm"
-                  >
-                    {BLOCKER_LABELS[b]}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* コメント */}
-          {existingFeedback.freeComment && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-600 mb-2">コメント</h4>
-              <p className="text-gray-700 bg-white p-3 rounded-lg">
-                {existingFeedback.freeComment}
-              </p>
-            </div>
-          )}
-
-          {/* 送信日時 */}
-          <p className="text-xs text-gray-500 text-right">
-            送信日時: {new Date(existingFeedback.feedbackAt).toLocaleString('ja-JP')}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const [showForm, setShowForm] = useState(!existingFeedback);
 
   const togglePositive = (value: PositiveType) => {
     setPositives((prev) =>
@@ -163,41 +99,118 @@ export function FeedbackForm({
     }
   };
 
-  if (submitted) {
+  // 既存フィードバックのサマリー表示
+  const renderExistingSummary = () => {
+    if (!existingFeedback || existingFeedback.count === 0) return null;
+
+    const scoreDisplay = getScoreDisplay(existingFeedback.weightedScore);
+
     return (
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-6 text-center">
-          <div className="w-12 h-12 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+      <Card className="border-blue-200 bg-blue-50 mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-blue-800 text-lg">評価サマリー</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* 加重平均スコア */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{scoreDisplay.emoji}</span>
+            <div>
+              <span className={`text-2xl font-bold ${scoreDisplay.color}`}>
+                {existingFeedback.weightedScore.toFixed(1)}
+              </span>
+              <span className="text-gray-500 text-sm ml-1">/ 3.0</span>
+              <p className="text-sm text-gray-600">
+                {existingFeedback.count}件の評価（{scoreDisplay.label}）
+              </p>
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-green-800">
-            フィードバックありがとうございます
-          </h3>
-          <p className="mt-2 text-sm text-green-600">
-            いただいたご意見は今後の改善に活用させていただきます
-          </p>
+
+          {/* 最新の評価一覧（最大3件） */}
+          {existingFeedback.entries.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">最近の評価</h4>
+              <div className="space-y-2">
+                {existingFeedback.entries.slice(0, 3).map((entry, index) => (
+                  <div key={index} className="bg-white p-2 rounded-lg text-sm">
+                    <div className="flex items-center gap-2">
+                      <span>{RATING_EMOJIS[entry.userRating]}</span>
+                      <span className="text-gray-700">{USER_RATING_LABELS[entry.userRating]}</span>
+                      <span className="text-gray-400 text-xs ml-auto">
+                        {new Date(entry.feedbackAt).toLocaleDateString('ja-JP')}
+                      </span>
+                    </div>
+                    {entry.freeComment && (
+                      <p className="text-gray-500 mt-1 text-xs">{entry.freeComment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 追加評価ボタン */}
+          {!showForm && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowForm(true)}
+              className="w-full"
+            >
+              追加で評価する
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
+  };
+
+  if (submitted) {
+    return (
+      <>
+        {renderExistingSummary()}
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-6 text-center">
+            <div className="w-12 h-12 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-green-800">
+              フィードバックありがとうございます
+            </h3>
+            <p className="mt-2 text-sm text-green-600">
+              いただいたご意見は今後の改善に活用させていただきます
+            </p>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  // フォームを表示しない場合（既存フィードバックがあり、追加評価ボタンが押されていない）
+  if (!showForm && existingFeedback) {
+    return renderExistingSummary();
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>フィードバック</CardTitle>
-      </CardHeader>
+    <>
+      {renderExistingSummary()}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {existingFeedback ? '追加フィードバック' : 'フィードバック'}
+          </CardTitle>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* 評価 */}
         <div>
@@ -307,7 +320,8 @@ export function FeedbackForm({
           フィードバックを送信
         </Button>
       </CardContent>
-    </Card>
+      </Card>
+    </>
   );
 }
 

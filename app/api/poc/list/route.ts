@@ -7,7 +7,7 @@
  */
 import { NextResponse } from 'next/server';
 import { kv } from '@/lib/kv';
-import type { AutoConfig, UserRating, EmbeddedFeedback } from '@/types';
+import type { AutoConfig, EmbeddedFeedback } from '@/types';
 
 // 動的ルートとして強制
 export const dynamic = 'force-dynamic';
@@ -18,9 +18,10 @@ interface PoCListItem {
   autoConfig?: AutoConfig;
   createdAt: string;
   shareToken?: string;
-  // フィードバック情報（PoCデータから直接取得）
+  // フィードバック情報（複数評価対応）
   feedback?: {
-    userRating: UserRating;
+    weightedScore: number;
+    count: number;
   };
 }
 
@@ -60,9 +61,10 @@ export async function GET() {
             autoConfig: pocData.autoConfig as AutoConfig | undefined,
             createdAt: pocData.createdAt as string || '',
             shareToken: pocData.shareToken as string | undefined,
-            // フィードバックはPoCデータから直接取得
-            feedback: embeddedFeedback ? {
-              userRating: embeddedFeedback.userRating,
+            // フィードバックはPoCデータから直接取得（複数評価対応）
+            feedback: embeddedFeedback?.count ? {
+              weightedScore: embeddedFeedback.weightedScore,
+              count: embeddedFeedback.count,
             } : undefined,
           });
         }

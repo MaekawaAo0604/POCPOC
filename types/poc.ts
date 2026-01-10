@@ -2,9 +2,9 @@ import type { AutoConfig } from './pain';
 import type { UserRating, PositiveType, BlockerType } from './feedback';
 
 /**
- * PoCに埋め込むフィードバック情報
+ * 個別のフィードバックエントリ
  */
-export interface EmbeddedFeedback {
+export interface FeedbackEntry {
   /** 価値評価 */
   userRating: UserRating;
   /** 良かった点 */
@@ -15,6 +15,27 @@ export interface EmbeddedFeedback {
   freeComment: string;
   /** フィードバック日時 */
   feedbackAt: string;
+}
+
+/**
+ * 評価スコア（加重移動平均用）
+ */
+export const RATING_SCORES: Record<UserRating, number> = {
+  helpful: 3,
+  meh: 2,
+  unknown: 1,
+};
+
+/**
+ * PoCに埋め込むフィードバック情報（複数評価対応）
+ */
+export interface EmbeddedFeedback {
+  /** フィードバック一覧（新しい順） */
+  entries: FeedbackEntry[];
+  /** 加重移動平均スコア (1-3) */
+  weightedScore: number;
+  /** 評価件数 */
+  count: number;
 }
 
 /**
