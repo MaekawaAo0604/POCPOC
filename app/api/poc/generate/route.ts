@@ -63,9 +63,15 @@ export async function POST(request: NextRequest) {
     const pocService = getPoCService();
     const result = await pocService.generatePoC(spec);
 
-    const response: GeneratePoCResponse = {
+    // フロントエンドが期待する形式で返す
+    const response = {
       pocId: result.pocId,
       html: result.html,
+      meta: {
+        selectedPains: spec.selectedPains,
+        shareToken: result.meta?.shareToken,
+        createdAt: result.meta?.createdAt || new Date().toISOString(),
+      },
     };
 
     return NextResponse.json(response, { status: 201 });
