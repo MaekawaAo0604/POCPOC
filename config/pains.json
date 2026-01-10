@@ -1,0 +1,407 @@
+{
+  "categories": [
+    {
+      "id": "customer_support",
+      "name": "カスタマーサポート",
+      "description": "顧客対応・問い合わせ処理に関する課題",
+      "pains": [
+        {
+          "id": "cs_response_time",
+          "name": "対応時間が長い",
+          "description": "問い合わせへの初期対応や解決までに時間がかかる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "問い合わせ内容の自動分類",
+              "回答ドラフトの自動生成",
+              "類似案件の自動検索"
+            ],
+            "recommendedOutputs": ["category", "reply_draft"],
+            "kpiTarget": {
+              "metric": "初期対応時間",
+              "value": 50,
+              "unit": "%削減"
+            },
+            "rationale": "問い合わせ内容を自動分類し、回答ドラフトを生成することで、対応時間を大幅に短縮できます。"
+          }
+        },
+        {
+          "id": "cs_quality_variance",
+          "name": "対応品質にバラつきがある",
+          "description": "担当者によって回答内容や対応品質が異なる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "標準回答テンプレートの提案",
+              "回答内容のチェック",
+              "ナレッジベース検索"
+            ],
+            "recommendedOutputs": ["reply_draft", "summary"],
+            "kpiTarget": {
+              "metric": "対応品質スコア",
+              "value": 30,
+              "unit": "%向上"
+            },
+            "rationale": "標準化された回答テンプレートとチェック機能により、対応品質のバラつきを抑制できます。"
+          }
+        },
+        {
+          "id": "cs_escalation",
+          "name": "エスカレーション判断が難しい",
+          "description": "上位者への引き継ぎタイミングや判断基準が曖昧",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "緊急度の自動判定",
+              "感情分析による優先度付け",
+              "エスカレーション基準チェック"
+            ],
+            "recommendedOutputs": ["priority", "sentiment", "category"],
+            "kpiTarget": {
+              "metric": "適切なエスカレーション率",
+              "value": 40,
+              "unit": "%向上"
+            },
+            "rationale": "感情分析と緊急度判定により、エスカレーションの判断を支援し、重要案件の見逃しを防ぎます。"
+          }
+        },
+        {
+          "id": "cs_knowledge_access",
+          "name": "必要な情報にたどり着けない",
+          "description": "FAQやナレッジベースから適切な情報を見つけるのが困難",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "自然言語でのナレッジ検索",
+              "関連情報の自動提示",
+              "回答の根拠表示"
+            ],
+            "recommendedOutputs": ["summary", "reply_draft"],
+            "kpiTarget": {
+              "metric": "情報検索時間",
+              "value": 60,
+              "unit": "%削減"
+            },
+            "rationale": "自然言語検索により、必要な情報へ素早くアクセスでき、対応効率が向上します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sales",
+      "name": "営業・商談",
+      "description": "営業活動・商談プロセスに関する課題",
+      "pains": [
+        {
+          "id": "sales_proposal",
+          "name": "提案書作成に時間がかかる",
+          "description": "顧客向け提案書の作成に多くの時間を費やしている",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "提案書ドラフトの自動生成",
+              "顧客情報の自動挿入",
+              "過去提案の参照"
+            ],
+            "recommendedOutputs": ["reply_draft", "summary"],
+            "kpiTarget": {
+              "metric": "提案書作成時間",
+              "value": 50,
+              "unit": "%削減"
+            },
+            "rationale": "顧客情報と過去事例を基にドラフトを自動生成し、提案書作成を効率化します。"
+          }
+        },
+        {
+          "id": "sales_lead_priority",
+          "name": "リードの優先順位付けが難しい",
+          "description": "どの見込み顧客にリソースを集中すべきか判断が困難",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "リードスコアリング",
+              "購買意欲の分析",
+              "商談確度の予測"
+            ],
+            "recommendedOutputs": ["priority", "category", "summary"],
+            "kpiTarget": {
+              "metric": "商談化率",
+              "value": 25,
+              "unit": "%向上"
+            },
+            "rationale": "データに基づくリードスコアリングにより、高確度案件に集中できます。"
+          }
+        },
+        {
+          "id": "sales_followup",
+          "name": "フォローアップのタイミングを逃す",
+          "description": "適切なフォローアップタイミングの把握が難しい",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "フォローアップリマインダー",
+              "最適タイミングの提案",
+              "コミュニケーション履歴の要約"
+            ],
+            "recommendedOutputs": ["summary", "reply_draft"],
+            "kpiTarget": {
+              "metric": "フォローアップ漏れ",
+              "value": 70,
+              "unit": "%削減"
+            },
+            "rationale": "履歴分析と最適タイミング提案により、フォローアップの漏れを防ぎます。"
+          }
+        },
+        {
+          "id": "sales_competitor",
+          "name": "競合情報の整理ができていない",
+          "description": "競合他社の情報が散在し、商談時に活用できない",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "競合情報の自動収集",
+              "差別化ポイントの整理",
+              "商談シナリオ提案"
+            ],
+            "recommendedOutputs": ["summary", "category"],
+            "kpiTarget": {
+              "metric": "競合案件の勝率",
+              "value": 20,
+              "unit": "%向上"
+            },
+            "rationale": "競合情報を整理し、差別化ポイントを明確にすることで商談を有利に進められます。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "marketing",
+      "name": "マーケティング",
+      "description": "マーケティング活動・コンテンツ制作に関する課題",
+      "pains": [
+        {
+          "id": "mkt_content",
+          "name": "コンテンツ制作が追いつかない",
+          "description": "ブログ、SNS、メールなどのコンテンツ制作に時間がかかる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "コンテンツドラフトの自動生成",
+              "トーン・スタイルの統一",
+              "SEO最適化提案"
+            ],
+            "recommendedOutputs": ["reply_draft", "summary"],
+            "kpiTarget": {
+              "metric": "コンテンツ制作時間",
+              "value": 40,
+              "unit": "%削減"
+            },
+            "rationale": "ドラフト自動生成により、コンテンツ制作のスピードを大幅に向上させます。"
+          }
+        },
+        {
+          "id": "mkt_personalization",
+          "name": "パーソナライゼーションができていない",
+          "description": "顧客セグメントに応じた最適なメッセージを届けられない",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "セグメント別メッセージ生成",
+              "顧客属性の分析",
+              "最適チャネルの提案"
+            ],
+            "recommendedOutputs": ["category", "reply_draft"],
+            "kpiTarget": {
+              "metric": "開封率・クリック率",
+              "value": 35,
+              "unit": "%向上"
+            },
+            "rationale": "顧客属性に基づくパーソナライズにより、エンゲージメントが向上します。"
+          }
+        },
+        {
+          "id": "mkt_analysis",
+          "name": "データ分析に時間がかかる",
+          "description": "キャンペーン効果測定やレポート作成に手間がかかる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "自動レポート生成",
+              "インサイト抽出",
+              "改善提案"
+            ],
+            "recommendedOutputs": ["summary", "category"],
+            "kpiTarget": {
+              "metric": "レポート作成時間",
+              "value": 60,
+              "unit": "%削減"
+            },
+            "rationale": "データの自動分析とレポート生成により、意思決定を迅速化します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "hr",
+      "name": "人事・採用",
+      "description": "人事業務・採用プロセスに関する課題",
+      "pains": [
+        {
+          "id": "hr_screening",
+          "name": "書類選考に時間がかかる",
+          "description": "大量の応募書類の確認・評価に時間を要する",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "履歴書の自動解析",
+              "スキルマッチング",
+              "候補者スコアリング"
+            ],
+            "recommendedOutputs": ["summary", "priority", "category"],
+            "kpiTarget": {
+              "metric": "書類選考時間",
+              "value": 70,
+              "unit": "%削減"
+            },
+            "rationale": "履歴書の自動解析とスコアリングにより、選考プロセスを大幅に効率化します。"
+          }
+        },
+        {
+          "id": "hr_inquiry",
+          "name": "社内問い合わせ対応が多い",
+          "description": "福利厚生や制度に関する問い合わせ対応に追われる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "社内FAQ検索",
+              "制度説明の自動回答",
+              "申請手順ガイド"
+            ],
+            "recommendedOutputs": ["reply_draft", "summary"],
+            "kpiTarget": {
+              "metric": "問い合わせ対応時間",
+              "value": 50,
+              "unit": "%削減"
+            },
+            "rationale": "よくある質問への自動回答により、人事部門の負荷を軽減します。"
+          }
+        },
+        {
+          "id": "hr_onboarding",
+          "name": "オンボーディングが属人化している",
+          "description": "新入社員の受け入れプロセスが標準化されていない",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "オンボーディングチェックリスト生成",
+              "必要情報の自動整理",
+              "進捗管理"
+            ],
+            "recommendedOutputs": ["summary", "category"],
+            "kpiTarget": {
+              "metric": "オンボーディング完了時間",
+              "value": 30,
+              "unit": "%短縮"
+            },
+            "rationale": "標準化されたチェックリストと進捗管理により、オンボーディングを効率化します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "legal",
+      "name": "法務・契約",
+      "description": "法務業務・契約管理に関する課題",
+      "pains": [
+        {
+          "id": "legal_review",
+          "name": "契約書レビューに時間がかかる",
+          "description": "契約書の確認・修正に多くの時間を要する",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "契約書の自動解析",
+              "リスク条項の検出",
+              "修正提案"
+            ],
+            "recommendedOutputs": ["summary", "category", "priority"],
+            "kpiTarget": {
+              "metric": "契約書レビュー時間",
+              "value": 50,
+              "unit": "%削減"
+            },
+            "rationale": "契約書の自動解析とリスク検出により、レビュー業務を効率化します。"
+          }
+        },
+        {
+          "id": "legal_compliance",
+          "name": "コンプライアンスチェックが大変",
+          "description": "規制対応やコンプライアンス確認に手間がかかる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "規制要件の自動チェック",
+              "違反リスクの検出",
+              "対応策の提案"
+            ],
+            "recommendedOutputs": ["category", "summary", "priority"],
+            "kpiTarget": {
+              "metric": "コンプライアンス確認時間",
+              "value": 40,
+              "unit": "%削減"
+            },
+            "rationale": "自動チェック機能により、コンプライアンス対応の漏れを防ぎます。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "業務オペレーション",
+      "description": "日常業務・事務処理に関する課題",
+      "pains": [
+        {
+          "id": "ops_data_entry",
+          "name": "データ入力・転記が多い",
+          "description": "手作業でのデータ入力や転記作業に時間を取られる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "データ抽出の自動化",
+              "フォーマット変換",
+              "入力チェック"
+            ],
+            "recommendedOutputs": ["category", "summary"],
+            "kpiTarget": {
+              "metric": "データ入力時間",
+              "value": 60,
+              "unit": "%削減"
+            },
+            "rationale": "データ抽出と変換の自動化により、手作業を大幅に削減します。"
+          }
+        },
+        {
+          "id": "ops_report",
+          "name": "レポート作成が大変",
+          "description": "定期レポートや報告書の作成に時間がかかる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "レポート自動生成",
+              "データ可視化",
+              "要約・インサイト抽出"
+            ],
+            "recommendedOutputs": ["summary", "category"],
+            "kpiTarget": {
+              "metric": "レポート作成時間",
+              "value": 50,
+              "unit": "%削減"
+            },
+            "rationale": "自動生成と要約機能により、レポート作成業務を効率化します。"
+          }
+        },
+        {
+          "id": "ops_communication",
+          "name": "メール・チャット対応に追われる",
+          "description": "社内外のコミュニケーション対応に時間を取られる",
+          "autoConfig": {
+            "hypothesisFeatures": [
+              "メールドラフト生成",
+              "返信優先度の判定",
+              "要約・整理"
+            ],
+            "recommendedOutputs": ["reply_draft", "priority", "summary"],
+            "kpiTarget": {
+              "metric": "メール対応時間",
+              "value": 40,
+              "unit": "%削減"
+            },
+            "rationale": "ドラフト生成と優先度判定により、コミュニケーション効率を向上させます。"
+          }
+        }
+      ]
+    }
+  ]
+}
