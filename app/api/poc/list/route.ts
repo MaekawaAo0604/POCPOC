@@ -4,10 +4,15 @@
  */
 import { NextResponse } from 'next/server';
 import { kv } from '@/lib/kv';
+import type { AutoConfig } from '@/types';
+
+// 動的ルートとして強制
+export const dynamic = 'force-dynamic';
 
 interface PoCListItem {
   pocId: string;
   selectedPains: string[];
+  autoConfig?: AutoConfig;
   createdAt: string;
   shareToken?: string;
 }
@@ -49,6 +54,7 @@ export async function GET() {
           pocList.push({
             pocId: pocData.pocId as string,
             selectedPains: pocData.selectedPains as string[] || [],
+            autoConfig: pocData.autoConfig as AutoConfig | undefined,
             createdAt: pocData.createdAt as string || '',
             shareToken: pocData.shareToken as string | undefined,
           });

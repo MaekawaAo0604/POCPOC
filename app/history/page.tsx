@@ -3,12 +3,33 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Button, Badge } from '@/components/ui';
+import { getPainConfig } from '@/lib/services/configService';
+import type { AutoConfig } from '@/types';
 
 interface PoCListItem {
   pocId: string;
   selectedPains: string[];
+  autoConfig?: AutoConfig;
   createdAt: string;
   shareToken?: string;
+}
+
+// ペインIDから名前を取得
+function getPainNames(painIds: string[]): string[] {
+  const config = getPainConfig();
+  const names: string[] = [];
+
+  for (const painId of painIds) {
+    for (const category of config.categories) {
+      const pain = category.pains.find(p => p.id === painId);
+      if (pain) {
+        names.push(pain.name);
+        break;
+      }
+    }
+  }
+
+  return names;
 }
 
 export default function HistoryPage() {
@@ -81,55 +102,65 @@ export default function HistoryPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {pocs.map((poc) => (
-              <Card key={poc.pocId} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-mono text-sm text-gray-500">
-                          {poc.pocId}
-                        </span>
+            {pocs.map((poc) => {
+              const painNames = getPainNames(poc.selectedPains);
+              const kpi = poc.autoConfig?.kpiTarget;
+
+              return (
+                <Card key={poc.pocId} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        {/* タイトル（ペイン名） */}
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                          {painNames.length > 0 ? painNames.join(' / ') : 'PoC'}
+                        </h3>
+
+                        {/* KPI目標 */}
+                        {kpi && (
+                          <p className="text-sm text-blue-600 font-medium mb-2">
+                            目標: {kpi.metric} {kpi.value}{kpi.unit}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-mono text-xs text-gray-400">
+                            {poc.pocId}
+                          </span>
+                          {poc.shareToken && (
+                            <Badge variant="success">共有済み</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          作成: {new Date(poc.createdAt).toLocaleString('ja-JP')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/poc/${poc.pocId}`}>
+                          <Button variant="secondary" size="sm">
+                            表示
+                          </Button>
+                        </Link>
                         {poc.shareToken && (
-                          <Badge variant="success">共有済み</Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                `${window.location.origin}/poc/${poc.pocId}?share=${poc.shareToken}`
+                              );
+                              alert('共有リンクをコピーしました');
+                            }}
+                          >
+                            リンクコピー
+                          </Button>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {poc.selectedPains.map((pain) => (
-                          <Badge key={pain} variant="default">
-                            {pain}
-                          </Badge>
-                        ))}
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        作成: {new Date(poc.createdAt).toLocaleString('ja-JP')}
-                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/poc/${poc.pocId}`}>
-                        <Button variant="secondary" size="sm">
-                          表示
-                        </Button>
-                      </Link>
-                      {poc.shareToken && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              `${window.location.origin}/poc/${poc.shareToken}`
-                            );
-                            alert('共有リンクをコピーしました');
-                          }}
-                        >
-                          リンクコピー
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
