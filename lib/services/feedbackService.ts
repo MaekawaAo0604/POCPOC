@@ -11,8 +11,8 @@ import { RATING_SCORES } from '@/types';
 /** 最大保持するフィードバック数 */
 const MAX_FEEDBACK_ENTRIES = 20;
 
-/** 加重移動平均の減衰率（新しいほど重みが大きい） */
-const DECAY_FACTOR = 0.8;
+/** EMAの平滑化係数（新しい評価の重み） */
+const EMA_ALPHA = 0.3;
 
 export interface FeedbackService {
   saveFeedback(feedback: FeedbackData): Promise<void>;
@@ -20,24 +20,15 @@ export interface FeedbackService {
 }
 
 /**
- * 加重移動平均スコアを計算
- * 新しい評価ほど重みが大きい（指数減衰）
+ * EMA（指数移動平均）でスコアを計算
+ * 新スコア = 既存スコア × (1-α) + 新評価 × α
  */
-function calculateWeightedScore(entries: FeedbackEntry[]): number {
-  if (entries.length === 0) return 0;
-
-  let weightedSum = 0;
-  let weightSum = 0;
-
-  entries.forEach((entry, index) => {
-    // 新しい順なので、index=0が最新
-    const weight = Math.pow(DECAY_FACTOR, index);
-    const score = RATING_SCORES[entry.userRating];
-    weightedSum += score * weight;
-    weightSum += weight;
-  });
-
-  return Math.round((weightedSum / weightSum) * 100) / 100;
+function calculateEmaScore(existingScore: number, newRating: number, isFirst: boolean): number {
+  if (isFirst) {
+    return newRating;
+  }
+  const newScore = existingScore * (1 - EMA_ALPHA) + newRating * EMA_ALPHA;
+  return Math.round(newScore * 100) / 100;
 }
 
 class FeedbackServiceImpl implements FeedbackService {
@@ -68,8 +59,11 @@ class FeedbackServiceImpl implements FeedbackService {
     // 新しいエントリを先頭に追加し、最大数を超えたら古いものを削除
     const updatedEntries = [newEntry, ...existingEntries].slice(0, MAX_FEEDBACK_ENTRIES);
 
-    // 加重移動平均を計算
-    const weightedScore = calculateWeightedScore(updatedEntries);
+    // EMA（指数移動平均）でスコアを計算
+    const isFirst = !pocData.feedback || pocData.feedback.count === 0;
+    const existingScore = pocData.feedback?.weightedScore ?? 0;
+    const newRating = RATING_SCORES[userRating];
+    const weightedScore = calculateEmaScore(existingScore, newRating, isFirst);
 
     // 更新されたフィードバック
     const embeddedFeedback: EmbeddedFeedback = {
