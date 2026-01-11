@@ -3,7 +3,7 @@
  * KVのデバッグ用エンドポイント（開発環境のみ）
  */
 import { NextResponse } from 'next/server';
-import { kv, KEYS } from '@/lib/kv';
+import { kv } from '@/lib/kv';
 
 export const dynamic = 'force-dynamic';
 
