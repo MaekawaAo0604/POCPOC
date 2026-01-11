@@ -32,11 +32,13 @@ export async function GET() {
 
     try {
       keys = await kv.keys('poc:*');
+      console.log('[/api/poc/list] kv.keys result:', keys.length, 'keys', keys);
     } catch (keysError) {
       console.error('keys() error:', keysError);
       try {
         const scanResult = await kv.scan(0, { match: 'poc:*', count: 100 });
         keys = scanResult[1] as string[];
+        console.log('[/api/poc/list] kv.scan result:', keys.length, 'keys', keys);
       } catch (scanError) {
         console.error('scan() error:', scanError);
       }
@@ -44,6 +46,7 @@ export async function GET() {
 
     // 共有トークンのキーを除外
     const pocKeys = keys.filter(key => key.startsWith('poc:') && !key.includes('share'));
+    console.log('[/api/poc/list] Filtered pocKeys:', pocKeys.length);
 
     // 各PoCのデータを取得
     const pocList: PoCListItem[] = [];
@@ -51,6 +54,7 @@ export async function GET() {
     for (const key of pocKeys) {
       try {
         const data = await kv.get(key);
+        console.log('[/api/poc/list] Get key:', key, 'hasData:', !!data, 'hasFeedback:', !!(data as Record<string, unknown>)?.feedback);
         if (data && typeof data === 'object') {
           const pocData = data as Record<string, unknown>;
           const embeddedFeedback = pocData.feedback as EmbeddedFeedback | undefined;
