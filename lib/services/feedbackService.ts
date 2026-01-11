@@ -89,7 +89,10 @@ class FeedbackServiceImpl implements FeedbackService {
       key: KEYS.poc(pocId),
       hasFeedbackInUpdatedPoc: !!updatedPoc.feedback,
       feedbackCount: updatedPoc.feedback?.count,
+      updatedPocKeys: Object.keys(updatedPoc),
+      feedbackKeys: updatedPoc.feedback ? Object.keys(updatedPoc.feedback) : 'none',
     });
+    console.log('[FeedbackService] Full updatedPoc.feedback:', JSON.stringify(updatedPoc.feedback));
 
     // TTLを維持して保存
     await kv.set(KEYS.poc(pocId), updatedPoc, { ex: DEFAULT_TTL_SECONDS });

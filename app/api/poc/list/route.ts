@@ -6,8 +6,8 @@
  * 別途フィードバックリストを取得する必要はない
  */
 import { NextResponse } from 'next/server';
-import { kv } from '@/lib/kv';
-import type { AutoConfig, EmbeddedFeedback } from '@/types';
+import { kv, KEYS } from '@/lib/kv';
+import type { AutoConfig, EmbeddedFeedback, PoCData } from '@/types';
 
 // 動的ルートとして強制
 export const dynamic = 'force-dynamic';
@@ -53,20 +53,35 @@ export async function GET() {
 
     for (const key of pocKeys) {
       try {
-        const data = await kv.get(key);
-        console.log('[/api/poc/list] Get key:', key, 'hasData:', !!data, 'hasFeedback:', !!(data as Record<string, unknown>)?.feedback);
+        // 型付きでデータ取得
+        const data = await kv.get<PoCData>(key);
+        console.log('[/api/poc/list] Get key:', key, 'hasData:', !!data);
+        if (data) {
+          console.log('[/api/poc/list] Data keys:', Object.keys(data));
+          console.log('[/api/poc/list] Has feedback prop:', 'feedback' in data);
+          console.log('[/api/poc/list] Feedback value:', data.feedback);
+          console.log('[/api/poc/list] Feedback JSON:', JSON.stringify(data.feedback));
+        }
         if (data && typeof data === 'object') {
-          const pocData = data as Record<string, unknown>;
-          const embeddedFeedback = pocData.feedback as EmbeddedFeedback | undefined;
+          const pocData = data as PoCData;
+          const embeddedFeedback = pocData.feedback;
+
+          // フィードバックのログ
+          console.log('[/api/poc/list] embeddedFeedback check:', {
+            exists: !!embeddedFeedback,
+            count: embeddedFeedback?.count,
+            countTruthy: embeddedFeedback?.count ? 'yes' : 'no',
+          });
 
           pocList.push({
-            pocId: pocData.pocId as string,
-            selectedPains: pocData.selectedPains as string[] || [],
-            autoConfig: pocData.autoConfig as AutoConfig | undefined,
-            createdAt: pocData.createdAt as string || '',
-            shareToken: pocData.shareToken as string | undefined,
+            pocId: pocData.pocId,
+            selectedPains: pocData.selectedPains || [],
+            autoConfig: pocData.autoConfig,
+            createdAt: pocData.createdAt || '',
+            shareToken: pocData.shareToken,
             // フィードバックはPoCデータから直接取得（複数評価対応）
-            feedback: embeddedFeedback?.count ? {
+            // count > 0 でチェック（0はfalsyなので明示的に比較）
+            feedback: embeddedFeedback && embeddedFeedback.count > 0 ? {
               weightedScore: embeddedFeedback.weightedScore,
               count: embeddedFeedback.count,
             } : undefined,
