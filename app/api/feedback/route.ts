@@ -77,17 +77,22 @@ function validateRequest(body: unknown): body is FeedbackRequest {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[/api/feedback] POST called');
   try {
     const body = await request.json();
+    console.log('[/api/feedback] Request body:', JSON.stringify(body));
 
     // バリデーション
     if (!validateRequest(body)) {
+      console.log('[/api/feedback] Validation failed');
       const errorResponse: ErrorResponse = {
         error: 'VALIDATION_ERROR',
         message: 'フィードバック内容が不正です。',
       };
       return NextResponse.json(errorResponse, { status: 400 });
     }
+
+    console.log('[/api/feedback] Validation passed');
 
     const feedbackData: FeedbackData = {
       pocId: body.pocId,
@@ -99,8 +104,10 @@ export async function POST(request: NextRequest) {
     };
 
     // フィードバック保存
+    console.log('[/api/feedback] Calling saveFeedback...');
     const feedbackService = getFeedbackService();
     await feedbackService.saveFeedback(feedbackData);
+    console.log('[/api/feedback] saveFeedback completed');
 
     const response: FeedbackResponse = {
       success: true,
@@ -108,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error('Failed to save feedback:', error);
+    console.error('[/api/feedback] Failed to save feedback:', error);
 
     const errorResponse: ErrorResponse = {
       error: 'INTERNAL_ERROR',
