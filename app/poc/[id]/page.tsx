@@ -19,6 +19,14 @@ export default async function PoCPage({ params }: PageProps) {
   // IDまたは共有トークンでPoC取得を試行
   let pocData = await pocService.getPoC(id);
 
+  // デバッグログ
+  console.log('[PoCPage] Fetched PoC:', {
+    id,
+    hasPocData: !!pocData,
+    hasFeedback: !!pocData?.feedback,
+    feedbackCount: pocData?.feedback?.count,
+  });
+
   // IDで見つからない場合、共有トークンとして試行
   if (!pocData) {
     pocData = await pocService.getPoCByShareToken(id);

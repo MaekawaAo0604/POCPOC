@@ -85,6 +85,15 @@ class FeedbackServiceImpl implements FeedbackService {
 
     // TTLを維持して保存
     await kv.set(KEYS.poc(pocId), updatedPoc, { ex: DEFAULT_TTL_SECONDS });
+
+    // デバッグ: 保存後に確認
+    const saved = await kv.get<PoCData>(KEYS.poc(pocId));
+    console.log('[FeedbackService] Saved feedback:', {
+      pocId,
+      hasFeedback: !!saved?.feedback,
+      count: saved?.feedback?.count,
+      weightedScore: saved?.feedback?.weightedScore,
+    });
   }
 
   /**
