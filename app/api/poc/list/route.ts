@@ -6,8 +6,8 @@
  * 別途フィードバックリストを取得する必要はない
  */
 import { NextResponse } from 'next/server';
-import { kv, KEYS } from '@/lib/kv';
-import type { AutoConfig, EmbeddedFeedback, PoCData } from '@/types';
+import { kv } from '@/lib/kv';
+import type { AutoConfig, PoCData } from '@/types';
 
 // 動的ルートとして強制
 export const dynamic = 'force-dynamic';
