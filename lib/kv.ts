@@ -5,14 +5,14 @@ import { kv } from '@vercel/kv';
  * 1つのDBでキープレフィックスによりデータを分離
  */
 export const KEYS = {
-  /** PoC データ (TTL 24時間) - フィードバックも直接埋め込み */
+  /** PoC データ (TTL 24時間) */
   poc: (id: string) => `poc:${id}`,
 
   /** 共有トークン → pocId マッピング (TTL 24時間) */
   share: (token: string) => `share:${token}`,
 
-  /** @deprecated フィードバックはPoCデータに直接埋め込むため不使用 */
-  feedbacks: 'feedbacks',
+  /** フィードバック データ (TTL 24時間) - PoCとは別キーで管理 */
+  feedback: (pocId: string) => `feedback:${pocId}`,
 } as const;
 
 /**

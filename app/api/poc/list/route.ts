@@ -2,12 +2,12 @@
  * GET /api/poc/list
  * 生成されたPoC一覧を取得（フィードバック情報含む）
  *
- * フィードバックはPoCデータに直接埋め込まれているため、
- * 別途フィードバックリストを取得する必要はない
+ * フィードバックは別キー（feedback:{pocId}）から取得
+ * Vercel KVのリードレプリカ問題を回避
  */
 import { NextResponse } from 'next/server';
-import { kv } from '@/lib/kv';
-import type { AutoConfig, PoCData } from '@/types';
+import { kv, KEYS } from '@/lib/kv';
+import type { AutoConfig, PoCData, EmbeddedFeedback } from '@/types';
 
 // 動的ルートとして強制
 export const dynamic = 'force-dynamic';
@@ -56,21 +56,18 @@ export async function GET() {
         // 型付きでデータ取得
         const data = await kv.get<PoCData>(key);
         console.log('[/api/poc/list] Get key:', key, 'hasData:', !!data);
-        if (data) {
-          console.log('[/api/poc/list] Data keys:', Object.keys(data));
-          console.log('[/api/poc/list] Has feedback prop:', 'feedback' in data);
-          console.log('[/api/poc/list] Feedback value:', data.feedback);
-          console.log('[/api/poc/list] Feedback JSON:', JSON.stringify(data.feedback));
-        }
+
         if (data && typeof data === 'object') {
           const pocData = data as PoCData;
-          const embeddedFeedback = pocData.feedback;
 
-          // フィードバックのログ
-          console.log('[/api/poc/list] embeddedFeedback check:', {
-            exists: !!embeddedFeedback,
-            count: embeddedFeedback?.count,
-            countTruthy: embeddedFeedback?.count ? 'yes' : 'no',
+          // フィードバックは別キーから取得（リードレプリカ問題回避）
+          const feedbackData = await kv.get<EmbeddedFeedback>(KEYS.feedback(pocData.pocId));
+          console.log('[/api/poc/list] Feedback from separate key:', {
+            pocId: pocData.pocId,
+            feedbackKey: KEYS.feedback(pocData.pocId),
+            hasFeedback: !!feedbackData,
+            count: feedbackData?.count,
+            weightedScore: feedbackData?.weightedScore,
           });
 
           pocList.push({
@@ -79,11 +76,10 @@ export async function GET() {
             autoConfig: pocData.autoConfig,
             createdAt: pocData.createdAt || '',
             shareToken: pocData.shareToken,
-            // フィードバックはPoCデータから直接取得（複数評価対応）
-            // count > 0 でチェック（0はfalsyなので明示的に比較）
-            feedback: embeddedFeedback && embeddedFeedback.count > 0 ? {
-              weightedScore: embeddedFeedback.weightedScore,
-              count: embeddedFeedback.count,
+            // フィードバックは別キーから取得（複数評価対応）
+            feedback: feedbackData && feedbackData.count > 0 ? {
+              weightedScore: feedbackData.weightedScore,
+              count: feedbackData.count,
             } : undefined,
           });
         }

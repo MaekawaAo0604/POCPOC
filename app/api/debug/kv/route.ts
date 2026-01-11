@@ -3,7 +3,8 @@
  * KVのデバッグ用エンドポイント（開発環境のみ）
  */
 import { NextResponse } from 'next/server';
-import { kv } from '@/lib/kv';
+import { kv, KEYS } from '@/lib/kv';
+import type { PoCData, EmbeddedFeedback } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,23 +15,36 @@ export async function GET() {
   }
 
   try {
-    const keys = await kv.keys('poc:*');
+    // pocキーとfeedbackキーの両方を取得
+    const pocKeys = await kv.keys('poc:*');
+    const feedbackKeys = await kv.keys('feedback:*');
+
     const results: Record<string, unknown> = {};
 
-    for (const key of keys) {
+    for (const key of pocKeys) {
       if (key.includes('share')) continue;
 
-      const data = await kv.get(key);
+      const data = await kv.get<PoCData>(key);
+      const pocId = data?.pocId;
+
+      // 別キーからフィードバックを取得
+      const feedbackData = pocId ? await kv.get<EmbeddedFeedback>(KEYS.feedback(pocId)) : null;
+
       results[key] = {
-        raw: data,
-        hasFeedback: !!(data as Record<string, unknown>)?.feedback,
-        feedbackData: (data as Record<string, unknown>)?.feedback,
+        pocId,
+        createdAt: data?.createdAt,
+        // 旧: PoCデータに埋め込まれたフィードバック（互換性のため残す）
+        embeddedFeedback: data?.feedback,
+        // 新: 別キーのフィードバック
+        separateFeedback: feedbackData,
+        separateFeedbackKey: pocId ? KEYS.feedback(pocId) : null,
       };
     }
 
     return NextResponse.json({
-      totalKeys: keys.length,
-      pocKeys: Object.keys(results).length,
+      totalPocKeys: pocKeys.filter(k => !k.includes('share')).length,
+      totalFeedbackKeys: feedbackKeys.length,
+      feedbackKeys,
       data: results,
     });
   } catch (error) {

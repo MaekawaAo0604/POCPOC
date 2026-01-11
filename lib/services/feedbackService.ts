@@ -1,7 +1,8 @@
 /**
  * FeedbackService - フィードバック保存・取得機能
  *
- * フィードバックはPoCデータに直接埋め込んで保存
+ * フィードバックは別キー（feedback:{pocId}）に保存
+ * Vercel KVのリードレプリカ問題を回避するため、PoCデータとは分離
  * 複数評価を加重移動平均で集計
  */
 import { kv, KEYS, DEFAULT_TTL_SECONDS } from '@/lib/kv';
@@ -35,16 +36,19 @@ function calculateEmaScore(existingScore: number, newRating: number, isFirst: bo
 
 class FeedbackServiceImpl implements FeedbackService {
   /**
-   * フィードバック保存 - 既存のフィードバックに追加して加重平均を再計算
+   * フィードバック保存 - 別キーに保存（リードレプリカ問題を回避）
    */
   async saveFeedback(feedback: FeedbackData): Promise<void> {
     const { pocId, userRating, positives, blockers, freeComment } = feedback;
 
-    // 既存のPoCデータを取得
+    // PoCの存在確認のみ
     const pocData = await kv.get<PoCData>(KEYS.poc(pocId));
     if (!pocData) {
       throw new Error('PoC not found');
     }
+
+    // 既存のフィードバックを別キーから取得
+    const existingFeedback = await kv.get<EmbeddedFeedback>(KEYS.feedback(pocId));
 
     // 新しいフィードバックエントリ
     const newEntry: FeedbackEntry = {
@@ -56,19 +60,19 @@ class FeedbackServiceImpl implements FeedbackService {
     };
 
     // 既存のエントリを取得（新しい順）
-    const existingEntries = pocData.feedback?.entries ?? [];
+    const existingEntries = existingFeedback?.entries ?? [];
 
     // 新しいエントリを先頭に追加し、最大数を超えたら古いものを削除
     const updatedEntries = [newEntry, ...existingEntries].slice(0, MAX_FEEDBACK_ENTRIES);
 
     // EMA（指数移動平均）でスコアを計算
-    const isFirst = !pocData.feedback || pocData.feedback.count === 0;
-    const existingScore = pocData.feedback?.weightedScore ?? 0;
+    const isFirst = !existingFeedback || existingFeedback.count === 0;
+    const existingScore = existingFeedback?.weightedScore ?? 0;
     const newRating = RATING_SCORES[userRating];
     const weightedScore = calculateEmaScore(existingScore, newRating, isFirst);
 
     // 累計評価件数（エントリ数ではなく実際の評価回数）
-    const previousCount = pocData.feedback?.count ?? 0;
+    const previousCount = existingFeedback?.count ?? 0;
     const newCount = previousCount + 1;
 
     // 更新されたフィードバック
@@ -78,43 +82,33 @@ class FeedbackServiceImpl implements FeedbackService {
       count: newCount,
     };
 
-    const updatedPoc: PoCData = {
-      ...pocData,
-      feedback: embeddedFeedback,
-    };
-
     // デバッグ: 保存前の状態
     console.log('[FeedbackService] Before save:', {
       pocId,
-      key: KEYS.poc(pocId),
-      hasFeedbackInUpdatedPoc: !!updatedPoc.feedback,
-      feedbackCount: updatedPoc.feedback?.count,
-      updatedPocKeys: Object.keys(updatedPoc),
-      feedbackKeys: updatedPoc.feedback ? Object.keys(updatedPoc.feedback) : 'none',
+      feedbackKey: KEYS.feedback(pocId),
+      existingCount: existingFeedback?.count ?? 0,
+      newCount,
+      weightedScore,
     });
-    console.log('[FeedbackService] Full updatedPoc.feedback:', JSON.stringify(updatedPoc.feedback));
 
-    // TTLを維持して保存
-    await kv.set(KEYS.poc(pocId), updatedPoc, { ex: DEFAULT_TTL_SECONDS });
+    // 別キーに保存（TTL付き）
+    await kv.set(KEYS.feedback(pocId), embeddedFeedback, { ex: DEFAULT_TTL_SECONDS });
 
-    // デバッグ: 保存後に確認（少し待ってから）
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const saved = await kv.get<PoCData>(KEYS.poc(pocId));
+    // デバッグ: 保存後に確認
+    const saved = await kv.get<EmbeddedFeedback>(KEYS.feedback(pocId));
     console.log('[FeedbackService] After save:', {
       pocId,
-      hasFeedback: !!saved?.feedback,
-      count: saved?.feedback?.count,
-      weightedScore: saved?.feedback?.weightedScore,
-      rawFeedback: JSON.stringify(saved?.feedback),
+      hasFeedback: !!saved,
+      count: saved?.count,
+      weightedScore: saved?.weightedScore,
     });
   }
 
   /**
-   * 特定PoCのフィードバック取得
+   * 特定PoCのフィードバック取得 - 別キーから取得
    */
   async getFeedbackByPocId(pocId: string): Promise<EmbeddedFeedback | null> {
-    const pocData = await kv.get<PoCData>(KEYS.poc(pocId));
-    return pocData?.feedback ?? null;
+    return await kv.get<EmbeddedFeedback>(KEYS.feedback(pocId));
   }
 }
 
